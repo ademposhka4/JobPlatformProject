@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Messaging Page: Inbox list with application and direct message conversations -->
+<div class="container mt-4" style="max-width:900px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 16px; line-height: 1.6;">
+  <section class="bubble-card mb-4">
+    <h1 class="mb-0" style="font-weight: 600; font-size: 1.75rem;">Inbox</h1>
+  </section>
+
+  <!-- Messaging Page: Application-based conversations section -->
+  <section class="card p-4 mb-4">
+    <h5 class="mb-3" style="font-weight: 600; font-size: 1.15rem;">Application Conversations</h5>
+    <ul class="list-unstyled mb-0" style="font-size: 1.05rem;">
+      {% for conv in conversations %}
+        {% with app=conv.application %}
+          <li class="mb-2">
+            <a href="{% url 'messaging:conversation_detail' app.id %}" class="text-decoration-none">
+              <i class="fas fa-briefcase me-2"></i>{{ app.job.title }} — {{ app.applicant.username }}
+            </a>
+          </li>
+        {% endwith %}
+      {% empty %}
+        <li class="text-muted">No application conversations.</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <!-- Messaging Page: Direct message conversations section -->
+  <section class="card p-4">
+    <h5 class="mb-3" style="font-weight: 600; font-size: 1.15rem;">Direct Messages</h5>
+    <ul class="list-unstyled mb-0" style="font-size: 1.05rem;">
+      {% for d in direct_conversations %}
+        {% if d.user_one == request.user %}
+          {% with other=d.user_two %}
+            <li class="mb-2">
+              <a href="{% url 'messaging:direct_conversation' other.username %}" class="text-decoration-none">
+                <i class="fas fa-comment me-2"></i>{{ other.username }}
+              </a>
+            </li>
+          {% endwith %}
+        {% else %}
+          {% with other=d.user_one %}
+            <li class="mb-2">
+              <a href="{% url 'messaging:direct_conversation' other.username %}" class="text-decoration-none">
+                <i class="fas fa-comment me-2"></i>{{ other.username }}
+              </a>
+            </li>
+          {% endwith %}
+        {% endif %}
+      {% empty %}
+        <li class="text-muted">No direct messages yet.</li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

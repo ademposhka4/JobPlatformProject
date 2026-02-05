@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container" style="max-width: 880px;">
+  <section class="bubble-card">
+    <div class="d-flex flex-column flex-md-row justify-content-between gap-3">
+      <div>
+        <h2 class="mb-2">{{ template_data.job.title }}</h2>
+        {% if template_data.job.location %}
+          <p class="mb-1 link-muted">{{ template_data.job.location }}</p>
+        {% endif %}
+        {% if template_data.job.category %}
+          <span class="pill-tag">{{ template_data.job.category }}</span>
+        {% endif %}
+      </div>
+      <div class="text-md-end">
+        <p class="mb-1 text-success fw-semibold fs-5">
+          $ {{ template_data.job.salary|floatformat:0|intcomma }}
+        </p>
+        <span class="link-muted">Annual salary</span>
+      </div>
+    </div>
+
+    <div class="separator"></div>
+
+    <article>
+      <h3 class="h5 section-title">Role overview</h3>
+      <p class="mb-0">{{ template_data.job.description }}</p>
+    </article>
+  </section>
+
+  <div class="mt-4" id="apply">
+    {% if request.user.is_authenticated %}
+
+      {% if request.user == template_data.job.user%}
+        {% if template_data.applications %}
+          <div class="card p-4 mt-3">
+            <h5 class="mb-3">Applications ({{ template_data.applications|length }})</h5>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>Applicant</th>
+                    <th>Note</th>
+                    <th>Submitted</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for app in template_data.applications %}
+                    <tr>
+                      <td>
+                        <a href="{% url 'accounts:profile_detail' username=app.applicant.username %}" class="text-decoration-none">
+                          {{ app.applicant.username }}
+                        </a>
+                      </td>
+                      <td style="white-space:pre-wrap">{{ app.note|default:"—" }}</td>
+                      <td>{{ app.created_at|date:"Y-m-d H:i" }}</td>
+                      <td>{{ app.status }}</td>
+                      <td>
+                        <a class="btn btn-sm btn-primary" href="{% url 'messaging:conversation_detail' app.id %}">
+                          Message
+                        </a>
+                        <form method="POST" action="{% url 'home.move_app' app.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-primary">Move Forward</button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% else %}
+          <div class="alert alert-info mt-3 mb-0">No applications yet.</div>
+        {% endif %}
+
+      {% elif not request.user.is_recruiter and request.user != template_data.job.user %}
+        <form method="POST" action="{% url 'home.apply' id=template_data.job.id %}" class="card p-4 mt-3">
+          {% csrf_token %}
+          <label for="note" class="form-label">Tailored Note (optional, 500 chars)</label>
+          <textarea id="note" name="note" class="form-control" maxlength="500" rows="3"
+            placeholder="Hi {{ template_data.job.user.username }}, I'm excited about {{ template_data.job.title }} because..."></textarea>
+          <div class="text-end mt-3">
+            <button type="submit" class="btn btn-success">Apply with One Click</button>
+          </div>
+        </form>
+
+      {% endif %}
+
+    {% else %}
+      <a href="{% url 'accounts:login' %}?next={% url 'home.show' id=template_data.job.id %}"
+         class="btn btn-outline-light mt-3">Log in as a Candidate to Apply</a>
+    {% endif %}
+  </div>
+
+  {% if request.user.is_authenticated and request.user == template_data.job.user %}
+    <div class="d-flex gap-2 mt-4">
+      <a href="{% url 'home.edit' id=template_data.job.id %}" class="btn btn-outline-light">Edit Job</a>
+      <a href="{% url 'home.recruiter_recs' job_id=template_data.job.id %}" class="btn btn-primary">
+        <i class="fas fa-star me-1"></i>View Recommended Candidates
+      </a>
+    </div>
+  {% endif %}
+</div>
+{% endblock content %}

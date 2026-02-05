@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4" style="max-width: 1200px;">
+  <section class="bubble-card mb-4">
+    <h1 class="h3 mb-1">Candidate Search</h1>
+    <p class="mb-0 link-muted">Find and message qualified candidates</p>
+  </section>
+
+  <section class="card p-4 mb-4">
+    <h5 class="mb-3">Search & Filter</h5>
+    <form method="get">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label for="name" class="form-label">Name</label>
+          <input type="text" name="name" id="name" class="form-control"
+                 placeholder="First, last, or username" value="{{ search_name }}">
+        </div>
+        <div class="col-md-3">
+          <label for="skills" class="form-label">Skills</label>
+          <input type="text" name="skills" id="skills" class="form-control"
+                 placeholder="e.g. python, react" value="{{ search_skills }}">
+        </div>
+        <div class="col-md-3">
+          <label for="location" class="form-label">Location</label>
+          <input type="text" name="location" id="location" class="form-control"
+                 placeholder="e.g. San Francisco" value="{{ search_location }}">
+        </div>
+        <div class="col-md-3">
+          <label for="job" class="form-label">Filter by Job Applicants</label>
+          <select name="job" id="job" class="form-select">
+            <option value="">All Candidates</option>
+            {% for job in recruiter_jobs %}
+              <option value="{{ job.id }}" {% if filter_job_id == job.id|stringformat:"s" %}selected{% endif %}>
+                {{ job.title }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="mt-3">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-search me-1"></i>Search
+        </button>
+        <a href="{% url 'home.candidates' %}" class="btn btn-outline-light">Clear Filters</a>
+      </div>
+    </form>
+  </section>
+
+  {% if filtered_by_job %}
+    <div class="alert alert-info">
+      <i class="fas fa-filter me-2"></i>Showing applicants for: <strong>{{ filtered_by_job.title }}</strong>
+    </div>
+  {% endif %}
+
+  <section>
+    <h5 class="mb-3">Results ({{ profiles|length }})</h5>
+
+    {% if profiles %}
+      <div class="row g-4">
+        {% for profile in profiles %}
+          <div class="col-md-6 col-lg-4">
+            <article class="card h-100 p-3">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="mb-0">
+                  {% if profile.firstName and profile.lastName %}
+                    {{ profile.firstName }} {{ profile.lastName }}
+                  {% elif profile.username %}
+                    {{ profile.username }}
+                  {% else %}
+                    Anonymous Candidate
+                  {% endif %}
+                </h6>
+              </div>
+
+              {% if profile.location %}
+                <p class="mb-2 text-muted small">
+                  <i class="fas fa-map-marker-alt me-1"></i>{{ profile.location }}
+                </p>
+              {% endif %}
+
+              {% if profile.skills %}
+                <div class="mb-2">
+                  <strong class="d-block small mb-1">Skills:</strong>
+                  <p class="mb-0 small text-wrap">{{ profile.skills|truncatewords:12 }}</p>
+                </div>
+              {% endif %}
+
+              {% if profile.experience %}
+                <div class="mb-2">
+                  <strong class="d-block small mb-1">Experience:</strong>
+                  <p class="mb-0 small text-wrap">{{ profile.experience|truncatewords:12 }}</p>
+                </div>
+              {% endif %}
+
+              {% if profile.education %}
+                <div class="mb-2">
+                  <strong class="d-block small mb-1">Education:</strong>
+                  <p class="mb-0 small">{{ profile.education|truncatewords:8 }}</p>
+                </div>
+              {% endif %}
+
+              <div class="mt-auto pt-2">
+                {% if profile.email %}
+                  <p class="mb-1 small"><i class="fas fa-envelope me-1"></i>{{ profile.email }}</p>
+                {% endif %}
+                {% if profile.phone %}
+                  <p class="mb-2 small"><i class="fas fa-phone me-1"></i>{{ profile.phone }}</p>
+                {% endif %}
+
+                <div class="d-flex gap-2">
+                  {% if profile.resume_url %}
+                    <a href="{{ profile.resume_url }}" target="_blank" class="btn btn-sm btn-outline-light flex-grow-1">
+                      <i class="fas fa-file-pdf me-1"></i>Resume
+                    </a>
+                  {% endif %}
+                  {% if profile.username and profile.username != request.user.username %}
+                    <a href="{% url 'messaging:direct_conversation' profile.username %}"
+                       class="btn btn-sm btn-primary flex-grow-1">
+                      <i class="fas fa-comment me-1"></i>Message
+                    </a>
+                  {% endif %}
+                </div>
+              </div>
+            </article>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card p-4">
+        <h6 class="mb-2">No candidates found</h6>
+        <p class="mb-0 link-muted">
+          {% if search_skills or search_location or search_name or filter_job_id %}
+            Try adjusting your search filters or clearing them to see all available candidates.
+          {% else %}
+            No candidates have made their profiles visible to recruiters yet.
+          {% endif %}
+        </p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
